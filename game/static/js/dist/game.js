@@ -200,9 +200,12 @@ class Player extends AcGameObject{
     }
 
     update(){
+        // AI start auto attack after 4 s per 5 s
         this.spent_time += this.timedelta / 1000;
         if(Math.random() < 1/300.0 && !this.is_me && this.spent_time > 4){
-            let player = this.playground.players[0];
+            let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)];
+            let tx = player.x + player.speed * this.vx * this.timedelta * 0.3/ 1000;
+            let ty = player.y + player.speed * this.vy * this.timedelta * 0.3/ 1000;
             this.shoot_fireball(player.x, player.y);
         }
         if(this.damage_speed > 10){
@@ -299,6 +302,13 @@ class Player extends AcGameObject{
         this.damage_y = Math.sin(angle);
         this.damage_speed = this.speed * 10;
     }
+
+    on_destroy(){
+        for(let i = 0; i < this.playground.players.length; i++){
+            if(this.playground.players[i] === this)
+                this.playground.players.splice(i, 1);
+        }
+    }
 }
 class FireBall extends AcGameObject{
     constructor(playground, player, x, y, radius, vx, vy, color, speed, move_length, damage){
@@ -346,8 +356,8 @@ class FireBall extends AcGameObject{
         this.ctx.fill();
     }
 
-    is_collision(player){
-        return this.get_dist(player.x, player.y, this.x, this.y) < this.radius + player.radius;
+    is_collision(obj){
+        return this.get_dist(obj.x, obj.y, this.x, this.y) < this.radius + obj.radius;
     }
 
     attack(player){
