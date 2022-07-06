@@ -186,6 +186,7 @@ class Player extends AcGameObject{
         this.friction = 0.9;
 
         this.cur_skill = null;
+        this.spent_time = 0;
     }
 
     start(){
@@ -199,6 +200,11 @@ class Player extends AcGameObject{
     }
 
     update(){
+        this.spent_time += this.timedelta / 1000;
+        if(Math.random() < 1/300.0 && !this.is_me && this.spent_time > 4){
+            let player = this.playground.players[0];
+            this.shoot_fireball(player.x, player.y);
+        }
         if(this.damage_speed > 10){
             this.vx = this.vy = 0;
             this.move_length = 0;

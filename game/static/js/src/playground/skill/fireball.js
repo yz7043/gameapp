@@ -44,8 +44,8 @@ class FireBall extends AcGameObject{
         this.ctx.fill();
     }
 
-    is_collision(player){
-        return this.get_dist(player.x, player.y, this.x, this.y) < this.radius + player.radius;
+    is_collision(obj){
+        return this.get_dist(obj.x, obj.y, this.x, this.y) < this.radius + obj.radius;
     }
 
     attack(player){
