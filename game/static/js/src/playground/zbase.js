@@ -12,9 +12,9 @@ class AcGamePlayground{
         this.game_map = new GameMap(this);
 
         this.players = [];
-        this.players.push(new Player(this, this.width/2, this.height/2, this.height*0.05, "white", this.height*0.15, true))
+        this.players.push(new Player(this, this.width/3, this.height/2, this.height*0.05, "white", this.height*0.15, true))
         for(let i = 0; i < 5; i++){
-            this.players.push(new Player(this, this.width/2, this.height/2, this.height*0.05, "blue", this.height*0.15, false));
+            this.players.push(new Player(this, this.width/2, this.height/2, this.height*0.05, this.get_random_color(), this.height*0.15, false));
         }
 
         this.start();
@@ -30,5 +30,10 @@ class AcGamePlayground{
 
     hide(){
         this.$playground.hide();
+    }
+
+    get_random_color(){
+        let colors = ["blue", "red", "pink", "grey", "green"];
+        return colors[Math.floor(Math.random() * 5)];
     }
 }
