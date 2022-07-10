@@ -2,3 +2,5 @@
 *.swp
 *.swo
 db.sqlite3
+
+static/
