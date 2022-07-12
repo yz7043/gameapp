@@ -187,6 +187,17 @@ class Player extends AcGameObject{
 
         this.cur_skill = null;
         this.spent_time = 0;
+        if(this.is_me){
+            this.img = new Image();
+            this.img.src = this.playground.root.settings.photo;
+        }
+    }
+
+    set_photo(){
+        if(this.is_me){
+            this.img = new Image();
+            this.img.src = this.playground.root.settings.photo;
+        }
     }
 
     start(){
@@ -234,10 +245,19 @@ class Player extends AcGameObject{
     }
 
     render(){
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, Math.PI*2, false);
-        this.ctx.fillStyle = this.color;
-        this.ctx.fill();
+        if(this.is_me){
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, Math.PI*2, false);
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+            this.ctx.restore();
+        }else{
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, Math.PI*2, false);
+            this.ctx.fillStyle = this.color;
+            this.ctx.fill();
+        }
     }
 
     add_listening_events(){
@@ -373,7 +393,7 @@ class AcGamePlayground{
         <div class="ac-game-playground">
         </div>
             `);
-        //this.hide();
+        this.hide();
         this.root.$ac_game.append(this.$playground);
         this.width = this.$playground.width();
         this.height = this.$playground.height();
@@ -405,14 +425,176 @@ class AcGamePlayground{
         return colors[Math.floor(Math.random() * 5)];
     }
 }
+class Settings{
+    constructor(root){
+        this.root = root;
+        this.platform = "WEB_OS";
+        this.username = "";
+        this.photo = "";
+        if(this.root.ac_os)
+            this.platform = "AC_OS";
+        this.$settings = $(`
+        <div class="ac-game-settings">
+            <div class="ac-game-settings-login">
+               <div class="ac-game-settings-title">
+                    Login
+                </div>
+                <div class="ac-game-settings-username">
+                    <div class="ac-game-settings-item">
+                        <input type="text" placeholder="Username"></input>
+                    </div>
+                </div>
+                <div class="ac-game-settings-password">
+                    <div class="ac-game-settings-item">
+                        <input type="password" placeholder="Password"></input>
+                    </div>
+                </div>
+                <div class="ac-game-settings-submit">
+                    <div class="ac-game-settings-item">
+                        <button>Login</button>
+                    </div>
+                </div>
+                <div class="ac-game-settings-error-message">
+                </div>
+                <div class="ac-game-settings-option">Register</div>
+                <br/>
+                <div class="ac-game-settings-google">
+                    <img width="30" src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png"></img>
+                    <div>Login With Google</div>
+                </div>
+            </div>
+
+            <div class="ac-game-settings-register">
+               <div class="ac-game-settings-title">
+                    Register
+                </div>
+                <div class="ac-game-settings-username">
+                    <div class="ac-game-settings-item">
+                        <input type="text" placeholder="Username"></input>
+                    </div>
+                </div>
+                <div class="ac-game-settings-password">
+                    <div class="ac-game-settings-item ac-game-settings-password-first">
+                        <input type="password" placeholder="Password"></input>
+                    </div>
+                </div>
+                <div class="ac-game-settings-password">
+                    <div class="ac-game-settings-item ac-game-settings-password-second">
+                        <input type="password" placeholder="Confirm Password"></input>
+                    </div>
+                </div>
+                <div class="ac-game-settings-submit">
+                    <div class="ac-game-settings-item">
+                        <button>Register</button>
+                    </div>
+                </div>
+                <div class="ac-game-settings-error-message">
+                </div>
+                <div class="ac-game-settings-option">Login</div>
+            </div>
+        </div>
+            `);
+        this.root.$ac_game.append(this.$settings);
+        this.$login = this.$settings.find(".ac-game-settings-login");
+        this.$register = this.$settings.find(".ac-game-settings-register");
+
+        this.$login_username = this.$login.find(".ac-game-settings-username input");
+        this.$login_password = this.$login.find(".ac-game-settings-password input");
+        this.$login_submit = this.$login.find(".ac-game-settings-password button");
+        this.$login_error_message = this.$login.find(".ac-game-settings-error-message");
+        this.$login_register = this.$login.find(".ac-game-settings-option");
+
+        this.$register_username = this.$register.find(".ac-game-settings-username input");
+        this.$register_password = this.$register.find(".ac-game-settings-password-first input");
+        this.$register_password_confirm = this.$register.find(".ac-game-settings-password-second input");
+        this.$register_submit = this.$register.find(".ac-game-settings-password button");
+        this.$register_error_message = this.$register.find(".ac-game-settings-error-message");
+        this.$register_login = this.$register.find(".ac-game-settings-option");
+        this.start();
+    }
+
+    start(){
+        this.getinfo();
+        this.add_listening_events();
+    }
+
+    add_listening_events(){
+        this.add_listening_event_login();
+        this.add_listening_event_register();
+    }
+
+    add_listening_event_login(){
+        let outer = this;
+        this.$login_register.click(function(){
+            outer.register();
+        });
+    }
+
+    add_listening_event_register(){
+        let outer = this;
+        this.$register_login.click(function(){
+            outer.login();
+        });
+    }
+
+    login(){
+        // open login page
+        this.$register.hide();
+        this.$login.show();
+    }
+
+    register(){
+        // show register page
+        this.$login.hide();
+        this.$register.show();
+    }
+
+    getinfo(){
+        let outer = this;
+        $.ajax({
+            url: "http://app2694.acapp.acwing.com.cn/settings/getinfo",
+            type: "GET",
+            data: {
+                platform: outer.platform,
+            },
+            success: function(resp){
+                console.log(resp);
+                if(resp.result === "success"){
+                    outer.username = resp.username;
+                    outer.photo = resp.photo;
+                    outer.root.create_playground();
+                    outer.hide();
+                    outer.root.menu.show();
+                }else{
+                    outer.login();
+                    //outer.register();
+                }
+            }
+        });
+    }
+
+    hide(){
+        this.$settings.hide();
+    }
+
+    show(){
+        this.$settings.show();
+    }
+}
 export class AcGame{
-    constructor(id){
+    constructor(id, ac_os){
         this.id = id;
+        this.ac_os = ac_os;
         this.$ac_game = $('#'+id);
+        this.settings = new Settings(this);
         this.menu = new AcGameMenu(this);
-        this.playground = new AcGamePlayground(this);
+        this.playground = null; //= new AcGamePlayground(this);
         this.start();
     }
     start(){}
+
+    create_playground(){
+        this.playground = new AcGamePlayground(this);
+    }
 }
 
