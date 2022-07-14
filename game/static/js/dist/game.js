@@ -41,6 +41,7 @@ class AcGameMenu{
         });
         this.$settings.click(function(){
             console.log("click settings");
+            outer.root.settings.logout_on_remote();
         })
     }
 
@@ -531,6 +532,9 @@ class Settings{
         this.$login_submit.click(function(){
             outer.login_on_remote();
         });
+        this.$register_submit.click(function(){
+            outer.register_on_remote();
+        })
     }
 
     add_listening_event_register(){
@@ -599,11 +603,43 @@ class Settings{
     }
 
     register_on_remote(){
-
+        let outer = this;
+        let username = this.$register_username.val();
+        let password = this.$register_password.val();
+        let password_confirm = this.$register_password_confirm.val();
+        console.log(username, password, password_confirm);
+        this.$register_error_message.empty();
+        $.ajax({
+            url: "http://app2694.acapp.acwing.com.cn/settings/register/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+                password_confirm: password_confirm
+            },
+            success: function(resp){
+                console.log(resp);
+                if(resp.result === "Success"){
+                    location.reload();
+                }else{
+                    outer.$register_error_message.html(resp.result);
+                }
+            }
+        });
     }
 
     logout_on_remote(){
-
+        if(this.platform === "WEB_OS"){
+            $.ajax({
+                url: "http://app2694.acapp.acwing.com.cn/settings/logout/",
+                type: "GET",
+                success: function(resp){
+                    if(resp.result === "Success"){
+                        location.reload();
+                    }
+                }
+            });
+        }
     }
 
     hide(){
