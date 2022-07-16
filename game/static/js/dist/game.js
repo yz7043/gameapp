@@ -34,10 +34,11 @@ class AcGameMenu{
         let outer = this;
         this.$single_mode.click(function(){
             outer.hide();
-            outer.root.playground.show();
+            outer.root.playground.show("Single");
         });
         this.$multi_mode.click(function(){
-            console.log("click multi");
+            outer.hide();
+            outer.root.playground.show("Multi");
         });
         this.$settings.click(function(){
             console.log("click settings");
@@ -174,7 +175,7 @@ class Particle extends AcGameObject{
     }
 }
 class Player extends AcGameObject{
-    constructor(playground, x, y, radius, color, speed, is_me){
+    constructor(playground, x, y, radius, color, speed, charactor, username="", photo=""){
         super();
         this.playground = playground;
         this.ctx = this.playground.game_map.ctx;
@@ -183,7 +184,7 @@ class Player extends AcGameObject{
         this.radius = radius
         this.color = color;
         this.speed = speed;
-        this.is_me = is_me;
+        this.charactor = charactor;
         this.eps = 0.01;
 
         this.vx = 0;
@@ -193,24 +194,26 @@ class Player extends AcGameObject{
         this.damage_y = 0;
         this.damage_speed = 0;
         this.friction = 0.9;
-
+        this.username = username;
+        this.photo = photo;
+        this.is_alive = true;
         this.cur_skill = null;
         this.spent_time = 0;
-        if(this.is_me){
+        if(this.charactor){
             this.img = new Image();
             this.img.src = this.playground.root.settings.photo;
         }
     }
 
     set_photo(){
-        if(this.is_me){
+        if(this.charactor !== "AI"){
             this.img = new Image();
-            this.img.src = this.playground.root.settings.photo;
+            this.img.src = this.photo;
         }
     }
 
     start(){
-        if(this.is_me){
+        if(this.charactor === "Me"){
             this.add_listening_events();
         }else{
             let tx = Math.random() * this.playground.width / this.playground.scale;
@@ -227,9 +230,15 @@ class Player extends AcGameObject{
     update_move(){
         // AI start auto attack after 4 s per 5 s
         this.spent_time += this.timedelta / 1000;
-        if(Math.random() < 1/300.0 && !this.is_me && this.spent_time > 4){
-            let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)];
-            this.shoot_fireball(player.x, player.y);
+        if(Math.random() < 1/300.0 && this.charactor === "AI" && this.spent_time > 0){
+            if(this.playground.players.length > 1 ){
+                let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)];
+                for(let i = 0; i < 300; i++){
+                    if(player === this)player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)]; 
+                    else break;
+                }
+                this.shoot_fireball(player.x, player.y);
+            }
         }
         if(this.damage_speed > this.eps){
             this.vx = this.vy = 0;
@@ -241,7 +250,7 @@ class Player extends AcGameObject{
             if(this.move_length < this.eps){
                 this.move_length = 0;
                 this.vx = this.vy = 0;
-                if(!this.is_me){
+                if(this.charactor === "AI"){
                     let tx = Math.random() * this.playground.width / this.playground.scale;
                     let ty = Math.random() * this.playground.height / this.playground.scale;
                     this.move_to(tx, ty);
@@ -257,7 +266,7 @@ class Player extends AcGameObject{
 
     render(){
         let scale = this.playground.scale;
-        if(this.is_me){
+        if(this.charactor === "Me"){
             this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, Math.PI*2, false);
@@ -295,6 +304,7 @@ class Player extends AcGameObject{
     }
 
     shoot_fireball(tx, ty){
+        if(!this.is_alive) return false;
         let x = this.x, y = this.y;
         let radius = 0.01;
         let angle = Math.atan2(ty-this.y, tx-this.x);
@@ -338,9 +348,12 @@ class Player extends AcGameObject{
 
     on_destroy(){
         for(let i = 0; i < this.playground.players.length; i++){
-            if(this.playground.players[i] === this)
+            if(this.playground.players[i] === this){
                 this.playground.players.splice(i, 1);
+                break;
+            }
         }
+        this.is_alive = false;
     }
 }
 class FireBall extends AcGameObject{
@@ -421,7 +434,7 @@ class AcGamePlayground{
 
     update(){}
 
-    show(){
+    show(mode){
         this.$playground.show();
         // this.width = this.$playground.width();
         // this.height = this.$playground.height();
@@ -429,9 +442,13 @@ class AcGamePlayground{
         this.game_map = new GameMap(this);
 
         this.players = [];
-        this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, "white", 0.15, true)) // scale == height -> no more height
-        for(let i = 0; i < 5; i++){
-            this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, this.get_random_color(), 0.15, false));
+        this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, "white", 0.15, "Me", this.root.settings.username, this.root.settings.photo)) // scale == height -> no more height
+        if(mode === "Single"){
+            for(let i = 0; i < 1; i++){
+                this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "AI"));
+            }
+        }else{
+
         }
     }
 
