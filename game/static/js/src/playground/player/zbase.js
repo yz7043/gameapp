@@ -9,7 +9,7 @@ class Player extends AcGameObject{
         this.color = color;
         this.speed = speed;
         this.is_me = is_me;
-        this.eps = 0.1;
+        this.eps = 0.01;
 
         this.vx = 0;
         this.vy = 0;
@@ -38,13 +38,18 @@ class Player extends AcGameObject{
         if(this.is_me){
             this.add_listening_events();
         }else{
-            let tx = Math.random() * this.playground.width;
-            let ty = Math.random() * this.playground.height;
+            let tx = Math.random() * this.playground.width / this.playground.scale;
+            let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
         }
     }
 
     update(){
+        this.update_move();
+        this.render();
+    }
+
+    update_move(){
         // AI start auto attack after 4 s per 5 s
         this.spent_time += this.timedelta / 1000;
         if(Math.random() < 1/300.0 && !this.is_me && this.spent_time > 4){
@@ -64,8 +69,8 @@ class Player extends AcGameObject{
                 this.move_length = 0;
                 this.vx = this.vy = 0;
                 if(!this.is_me){
-                    let tx = Math.random() * this.playground.width;
-                    let ty = Math.random() * this.playground.height;
+                    let tx = Math.random() * this.playground.width / this.playground.scale;
+                    let ty = Math.random() * this.playground.height / this.playground.scale;
                     this.move_to(tx, ty);
                 }
             }else{
@@ -75,20 +80,20 @@ class Player extends AcGameObject{
             this.move_length -= moved;
             }
         }
-        this.render();
     }
 
     render(){
+        let scale = this.playground.scale;
         if(this.is_me){
             this.ctx.save();
             this.ctx.beginPath();
-            this.ctx.arc(this.x, this.y, this.radius, Math.PI*2, false);
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, Math.PI*2, false);
             this.ctx.clip();
-            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+            this.ctx.drawImage(this.img, (this.x - this.radius) * scale, (this.y - this.radius) * scale, this.radius * 2 * scale, this.radius * 2 * scale);
             this.ctx.restore();
         }else{
             this.ctx.beginPath();
-            this.ctx.arc(this.x, this.y, this.radius, Math.PI*2, false);
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0,  Math.PI*2, false);
             this.ctx.fillStyle = this.color;
             this.ctx.fill();
         }
@@ -98,11 +103,12 @@ class Player extends AcGameObject{
         let outer = this;
         this.playground.game_map.$canvas.on("contextmenu", function(){return false;});
         this.playground.game_map.$canvas.mousedown(function(e){
+            const rect = outer.ctx.canvas.getBoundingClientRect();
             if(e.which === 3){
-                outer.move_to(e.clientX, e.clientY);
+                outer.move_to((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
             }else if(e.which === 1){
                 if(outer.cur_skill === "fireball"){
-                    outer.shoot_fireball(e.clientX, e.clientY);
+                    outer.shoot_fireball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
                     outer.cur_skill = null;
                 }
             }
@@ -117,13 +123,13 @@ class Player extends AcGameObject{
 
     shoot_fireball(tx, ty){
         let x = this.x, y = this.y;
-        let radius = this.playground.height * 0.01;
+        let radius = 0.01;
         let angle = Math.atan2(ty-this.y, tx-this.x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
         let color = "orange";
-        let speed = this.playground.height * 0.5;
-        let move_length = this.playground.height * 1;
-        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height*0.01);
+        let speed = 0.5;
+        let move_length = 1;
+        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
 
     }
 
@@ -148,7 +154,7 @@ class Player extends AcGameObject{
 
         }
         this.radius -= damage;
-        if(this.radius < 10){
+        if(this.radius < this.eps){
             this.destroy();
             return false;
         }
