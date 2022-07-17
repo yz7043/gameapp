@@ -11,6 +11,7 @@ def login_acc(request):
             "result": "Username or password is incorrect!"
         })
     login(request, user)
+    print(request)
     return JsonResponse({
             "result": "Success"
         })

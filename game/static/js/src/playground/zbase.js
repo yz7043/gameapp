@@ -27,12 +27,17 @@ class AcGamePlayground{
         this.game_map = new GameMap(this);
         this.players = [];
         this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, "white", 0.15, "Me", this.root.settings.username, this.root.settings.photo)) // scale == height -> no more height
+        let outer = this;
         if(mode === "Single"){
             for(let i = 0; i < 5; i++){
                 this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "AI"));
             }
         }else{
             this.mps = new MultiplayerSocket(this);
+            this.mps.uuid = this.players[0].uuid;
+            this.mps.ws.onopen = function(){
+                outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
+            };
         }
     }
 

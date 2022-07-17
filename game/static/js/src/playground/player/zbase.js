@@ -23,6 +23,7 @@ class Player extends AcGameObject{
         this.is_alive = true;
         this.cur_skill = null;
         this.spent_time = 0;
+        this.uuid = this.create_uuid();
         if(this.charactor){
             this.img = new Image();
             this.img.src = this.playground.root.settings.photo;
@@ -39,7 +40,7 @@ class Player extends AcGameObject{
     start(){
         if(this.charactor === "Me"){
             this.add_listening_events();
-        }else{
+        }else if(this.charactor === "AI"){
             let tx = Math.random() * this.playground.width / this.playground.scale;
             let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
@@ -90,7 +91,7 @@ class Player extends AcGameObject{
 
     render(){
         let scale = this.playground.scale;
-        if(this.charactor === "Me"){
+        if(this.charactor !== "AI"){
             this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, Math.PI*2, false);

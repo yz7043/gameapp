@@ -66,6 +66,13 @@ class AcGameObject{
 
     start(){}
 
+    create_uuid(){
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+    }
+
     update(){}
 
     on_destroy(){}
@@ -199,6 +206,7 @@ class Player extends AcGameObject{
         this.is_alive = true;
         this.cur_skill = null;
         this.spent_time = 0;
+        this.uuid = this.create_uuid();
         if(this.charactor){
             this.img = new Image();
             this.img.src = this.playground.root.settings.photo;
@@ -215,7 +223,7 @@ class Player extends AcGameObject{
     start(){
         if(this.charactor === "Me"){
             this.add_listening_events();
-        }else{
+        }else if(this.charactor === "AI"){
             let tx = Math.random() * this.playground.width / this.playground.scale;
             let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
@@ -266,7 +274,7 @@ class Player extends AcGameObject{
 
     render(){
         let scale = this.playground.scale;
-        if(this.charactor === "Me"){
+        if(this.charactor !== "AI"){
             this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, Math.PI*2, false);
@@ -421,7 +429,39 @@ class MultiplayerSocket{
     }
 
     start(){
+        this.receive();
+    }
 
+    send_create_player(username, photo){
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            "event": "create_player",
+            "uuid": outer.uuid,
+            "username": username,
+            "photo": photo
+        }))
+    }
+
+    receive_create_player(uuid, username, photo){
+        let player = new Player(this.playground, this.playground.width/2/this.playground.scale, 0.5, 0.05, "white", 0.15, "Enemy", username, photo);
+        player.uuid = uuid;
+        this.playground.players.push(player);
+    }
+
+    receive(){
+        let outer = this;
+        this.ws.onmessage = function(e){
+            let data = JSON.parse(e.data);
+            const uuid = data.uuid;
+            if(uuid === outer.uuid){
+                return false;
+            }
+            let event = data.event;
+            console.log("receive create player", data);
+            if(event === "create_player"){
+                outer.receive_create_player(uuid, data.username, data.photo);
+            }
+        }
     }
 }class AcGamePlayground{
     constructor(root){
@@ -450,15 +490,19 @@ class MultiplayerSocket{
         // this.height = this.$playground.height();
         this.resize();
         this.game_map = new GameMap(this);
-
         this.players = [];
         this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, "white", 0.15, "Me", this.root.settings.username, this.root.settings.photo)) // scale == height -> no more height
+        let outer = this;
         if(mode === "Single"){
             for(let i = 0; i < 5; i++){
                 this.players.push(new Player(this, this.width/2/this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "AI"));
             }
         }else{
             this.mps = new MultiplayerSocket(this);
+            this.mps.uuid = this.players[0].uuid;
+            this.mps.ws.onopen = function(){
+                outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
+            };
         }
     }
 
@@ -621,7 +665,6 @@ class Settings{
                 platform: outer.platform,
             },
             success: function(resp){
-                console.log(resp);
                 if(resp.result === "success"){
                     outer.username = resp.username;
                     outer.photo = resp.photo;
@@ -630,7 +673,6 @@ class Settings{
                     outer.root.menu.show();
                 }else{
                     outer.login();
-                    //outer.register();
                 }
             }
         });
@@ -663,7 +705,6 @@ class Settings{
         let username = this.$register_username.val();
         let password = this.$register_password.val();
         let password_confirm = this.$register_password_confirm.val();
-        console.log(username, password, password_confirm);
         this.$register_error_message.empty();
         $.ajax({
             url: "https://app2694.acapp.acwing.com.cn/settings/register/",
@@ -674,7 +715,6 @@ class Settings{
                 password_confirm: password_confirm
             },
             success: function(resp){
-                console.log(resp);
                 if(resp.result === "Success"){
                     location.reload();
                 }else{
