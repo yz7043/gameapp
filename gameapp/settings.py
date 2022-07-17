@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -137,3 +138,13 @@ CORS_ALLOWED_ORIGINS = ["http://www.andyzhuyx.com",
     "http://app2694.acapp.acwing.com.cn",
     "https://app2694.acapp.acwing.com.cn",
 ]
+
+ASGI_APPLICATION = 'gameapp.asgi.application'
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    }
+}
