@@ -20,6 +20,7 @@ class AcGamePlayground{
     update(){}
 
     show(mode){
+        this.mode = mode;
         this.$playground.show();
         // this.width = this.$playground.width();
         // this.height = this.$playground.height();

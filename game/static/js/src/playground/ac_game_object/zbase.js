@@ -5,6 +5,7 @@ class AcGameObject{
         AC_GAME_OBJECTS.push(this);
         this.has_called_start = false;
         this.timedelta = 0; // ms
+        this.uuid = this.create_uuid();
     }
 
     start(){}

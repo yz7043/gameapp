@@ -23,11 +23,9 @@ class Player extends AcGameObject{
         this.is_alive = true;
         this.cur_skill = null;
         this.spent_time = 0;
-        this.uuid = this.create_uuid();
-        if(this.charactor){
-            this.img = new Image();
-            this.img.src = this.playground.root.settings.photo;
-        }
+        console.log(charactor, username, photo);
+        this.fireballs = [];
+        this.set_photo();
     }
 
     set_photo(){
@@ -112,10 +110,20 @@ class Player extends AcGameObject{
         this.playground.game_map.$canvas.mousedown(function(e){
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if(e.which === 3){
-                outer.move_to((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                let tx = (e.clientX - rect.left) / outer.playground.scale;
+                let ty = (e.clientY - rect.top) / outer.playground.scale;
+                outer.move_to(tx, ty);
+                if(outer.playground.mode === "Multi"){
+                    outer.playground.mps.send_move_to(tx, ty);
+                }
             }else if(e.which === 1){
-                if(outer.cur_skill === "fireball"){
-                    outer.shoot_fireball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                let tx = (e.clientX - rect.left) / outer.playground.scale;
+                let ty = (e.clientY - rect.top) / outer.playground.scale;
+                if(outer.cur_skill === "fireball"){ 
+                    let fireball = outer.shoot_fireball(tx, ty);
+                    if(outer.playground.mode === "Multi"){
+                        outer.playground.mps.send_shoot_fireball(tx, ty, fireball.uuid);
+                    }
                     outer.cur_skill = null;
                 }
             }
@@ -137,8 +145,9 @@ class Player extends AcGameObject{
         let color = "orange";
         let speed = 0.5;
         let move_length = 1;
-        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
-
+        let fireball = new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
+        this.fireballs.push(fireball);
+        return fireball;
     }
 
     move_to(tx, ty){
@@ -169,6 +178,16 @@ class Player extends AcGameObject{
         this.damage_x = Math.cos(angle);
         this.damage_y = Math.sin(angle);
         this.damage_speed = this.speed * 10;
+    }
+
+    destroy_fireball(uuid){
+        for(let i = 0; i < this.fireballs.length; i++){
+            if(this.fireballs[i].uuid === uuid){
+                this.fireballs[i].destroy();
+                // this.fireballs.splice(i, 1);
+                break;
+            }
+        }
     }
 
     on_destroy(){
